@@ -28,17 +28,14 @@ export class QuestionsService {
         });
     }
 
-    async findAll(userId: number) {
+    async findAll() {
         return this.prisma.question.findMany({
-        where: { userId },
         orderBy: { id: 'asc' },
         });
     }
 
-    async findOne(userId: number, id: number) {
-        return this.prisma.question.findFirst({
-        where: { id, userId }, // findFirst supports composite condition
-        });
+    async findOne(id: number) {
+        return this.prisma.question.findUnique({ where: { id } });
     }
 
     async update(userId: number, id: number, data: UpdateQuestionDto) {
@@ -69,8 +66,8 @@ export class QuestionsService {
         return { deleted: true };
     }
 
-    async random(userId: number) {
-        const list = await this.prisma.question.findMany({ where: { userId } });
+    async random() {
+        const list = await this.prisma.question.findMany();
         if (!list.length) return null;
         return list[Math.floor(Math.random() * list.length)];
     }

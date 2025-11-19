@@ -1,15 +1,15 @@
 import {
-    Controller,
-    Post,
-    Get,
-    Body,
-    UploadedFile,
-    UseInterceptors,
-    Patch,
-    Param,
-    Delete,
-    Req,
-    UseGuards,
+  Controller,
+  Post,
+  Get,
+  Body,
+  UploadedFile,
+  UseInterceptors,
+  Patch,
+  Param,
+  Delete,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -21,11 +21,22 @@ import { UpdateQuestionDto } from './dto/update-question.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('questions')
-@UseGuards(JwtAuthGuard) // Semua endpoint DIHARUSKAN login
 export class QuestionsController {
     constructor(private readonly questionsService: QuestionsService) {}
 
+    // ===================
+    // PUBLIC — GAME ACCESS
+    // ===================
+    @Get()
+    findAll() {
+        return this.questionsService.findAll();
+    }
+
+    // ===================
+    // ADMIN — PROTECTED
+    // ===================
     @Post()
+    @UseGuards(JwtAuthGuard)
     @UseInterceptors(
         FileInterceptor('file', {
         storage: diskStorage({
@@ -48,21 +59,14 @@ export class QuestionsController {
         });
     }
 
-    @Get()
-    findAll(@Req() req) {
-        return this.questionsService.findAll(req.user.id);
-    }
-
     @Patch(':id')
-    update(
-        @Req() req,
-        @Param('id') id: string,
-        @Body() dto: UpdateQuestionDto,
-    ) {
+    @UseGuards(JwtAuthGuard)
+    update(@Req() req, @Param('id') id: string, @Body() dto: UpdateQuestionDto) {
         return this.questionsService.update(req.user.id, Number(id), dto);
     }
 
     @Delete(':id')
+    @UseGuards(JwtAuthGuard)
     delete(@Req() req, @Param('id') id: string) {
         return this.questionsService.delete(req.user.id, Number(id));
     }
