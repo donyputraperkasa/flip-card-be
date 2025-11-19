@@ -1,15 +1,15 @@
 import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  UploadedFile,
-  UseInterceptors,
-  Patch,
-  Param,
-  Delete,
-  Req,
-  UseGuards,
+    Controller,
+    Post,
+    Get,
+    Body,
+    UploadedFile,
+    UseInterceptors,
+    Patch,
+    Param,
+    Delete,
+    Req,
+    UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -21,31 +21,20 @@ import { UpdateQuestionDto } from './dto/update-question.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('questions')
+@UseGuards(JwtAuthGuard)
 export class QuestionsController {
     constructor(private readonly questionsService: QuestionsService) {}
 
-    // ===================
-    // PUBLIC — GAME ACCESS
-    // ===================
-    @Get()
-    findAll() {
-        return this.questionsService.findAll();
-    }
-
-    // ===================
-    // ADMIN — PROTECTED
-    // ===================
     @Post()
-    @UseGuards(JwtAuthGuard)
     @UseInterceptors(
         FileInterceptor('file', {
-        storage: diskStorage({
-            destination: join(__dirname, '..', '..', 'uploads'),
-            filename: (req, file, cb) => {
-            const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-            cb(null, unique + extname(file.originalname));
-            },
-        }),
+            storage: diskStorage({
+                destination: join(__dirname, '..', '..', 'uploads'),
+                filename: (req, file, cb) => {
+                    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+                    cb(null, unique + extname(file.originalname));
+                },
+            }),
         }),
     )
     async create(
@@ -54,19 +43,26 @@ export class QuestionsController {
         @Body() body: CreateQuestionDto,
     ) {
         return this.questionsService.create(req.user.id, {
-        ...body,
-        imageUrl: file ? file.filename : null,
+            ...body,
+            imageUrl: file ? file.filename : null,
         });
     }
 
+    @Get()
+    findAll(@Req() req) {
+        return this.questionsService.findAll(req.user.id);
+    }
+
     @Patch(':id')
-    @UseGuards(JwtAuthGuard)
-    update(@Req() req, @Param('id') id: string, @Body() dto: UpdateQuestionDto) {
+    update(
+        @Req() req,
+        @Param('id') id: string,
+        @Body() dto: UpdateQuestionDto,
+    ) {
         return this.questionsService.update(req.user.id, Number(id), dto);
     }
 
     @Delete(':id')
-    @UseGuards(JwtAuthGuard)
     delete(@Req() req, @Param('id') id: string) {
         return this.questionsService.delete(req.user.id, Number(id));
     }

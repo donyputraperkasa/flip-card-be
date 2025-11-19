@@ -17,6 +17,14 @@ interface UpdateQuestionDto {
 export class QuestionsService {
     constructor(private prisma: PrismaService) {}
 
+/*************  ✨ Windsurf Command ⭐  *************/
+    /**
+     * Create a new question for a user
+     * @param userId The user ID creating the question
+     * @param data The question data
+     * @returns The created question
+     */
+/*******  627fce8d-6607-4481-9da2-be10f6e39fdf  *******/
     async create(userId: number, data: CreateQuestionDto) {
         return this.prisma.question.create({
         data: {
@@ -28,14 +36,17 @@ export class QuestionsService {
         });
     }
 
-    async findAll() {
+    async findAll(userId: number) {
         return this.prisma.question.findMany({
+        where: { userId },
         orderBy: { id: 'asc' },
         });
     }
 
-    async findOne(id: number) {
-        return this.prisma.question.findUnique({ where: { id } });
+    async findOne(userId: number, id: number) {
+        return this.prisma.question.findFirst({
+        where: { id, userId }, // findFirst supports composite condition
+        });
     }
 
     async update(userId: number, id: number, data: UpdateQuestionDto) {
@@ -66,8 +77,8 @@ export class QuestionsService {
         return { deleted: true };
     }
 
-    async random() {
-        const list = await this.prisma.question.findMany();
+    async random(userId: number) {
+        const list = await this.prisma.question.findMany({ where: { userId } });
         if (!list.length) return null;
         return list[Math.floor(Math.random() * list.length)];
     }
