@@ -17,14 +17,6 @@ interface UpdateQuestionDto {
 export class QuestionsService {
     constructor(private prisma: PrismaService) {}
 
-/*************  ✨ Windsurf Command ⭐  *************/
-    /**
-     * Create a new question for a user
-     * @param userId The user ID creating the question
-     * @param data The question data
-     * @returns The created question
-     */
-/*******  627fce8d-6607-4481-9da2-be10f6e39fdf  *******/
     async create(userId: number, data: CreateQuestionDto) {
         return this.prisma.question.create({
         data: {
