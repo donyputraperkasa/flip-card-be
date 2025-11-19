@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface CreateQuestionDto {
     question: string;
     answer: string;
-    imageUrl?: string | null; // penting untuk upload file
+    imageUrl?: string | null;
 }
 
 interface UpdateQuestionDto {
@@ -17,58 +17,61 @@ interface UpdateQuestionDto {
 export class QuestionsService {
     constructor(private prisma: PrismaService) {}
 
-    // CREATE
-    async create(data: CreateQuestionDto) {
+    async create(userId: number, data: CreateQuestionDto) {
         return this.prisma.question.create({
         data: {
             question: data.question,
             answer: data.answer,
             imageUrl: data.imageUrl ?? null,
+            user: { connect: { id: userId } }, // connect relation
         },
         });
     }
 
-    // GET ALL
-    async findAll() {
+    async findAll(userId: number) {
         return this.prisma.question.findMany({
+        where: { userId },
         orderBy: { id: 'asc' },
         });
     }
 
-    // GET ONE
-    async findOne(id: number) {
-        return this.prisma.question.findUnique({
-        where: { id },
+    async findOne(userId: number, id: number) {
+        return this.prisma.question.findFirst({
+        where: { id, userId }, // findFirst supports composite condition
         });
     }
 
-    // UPDATE
-    async update(id: number, data: UpdateQuestionDto) {
-        return this.prisma.question.update({
-        where: { id },
+    async update(userId: number, id: number, data: UpdateQuestionDto) {
+        // updateMany karena juga memastikan userId match
+        const res = await this.prisma.question.updateMany({
+        where: { id, userId },
         data: {
-            question: data.question,
-            answer: data.answer,
-            imageUrl: data.imageUrl ?? undefined, 
-            // undefined = tidak update field
+            question: data.question ?? undefined,
+            answer: data.answer ?? undefined,
+            imageUrl: data.imageUrl ?? undefined,
         },
         });
+
+        if (res.count === 0) {
+        throw new NotFoundException('Question not found or not owned by user');
+        }
+        // kalau mau return updated row, ambil lagi:
+        return this.prisma.question.findFirst({ where: { id, userId } });
     }
 
-    // DELETE
-    async delete(id: number) {
-        return this.prisma.question.delete({
-        where: { id },
+    async delete(userId: number, id: number) {
+        const res = await this.prisma.question.deleteMany({
+        where: { id, userId },
         });
+        if (res.count === 0) {
+        throw new NotFoundException('Question not found or not owned by user');
+        }
+        return { deleted: true };
     }
 
-    // GET RANDOM
-    async random() {
-        const list = await this.prisma.question.findMany();
-
+    async random(userId: number) {
+        const list = await this.prisma.question.findMany({ where: { userId } });
         if (!list.length) return null;
-
-        const randomIndex = Math.floor(Math.random() * list.length);
-        return list[randomIndex];
+        return list[Math.floor(Math.random() * list.length)];
     }
 }
