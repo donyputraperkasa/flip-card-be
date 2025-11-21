@@ -22,6 +22,7 @@ model Question {
   question  String
   answer    String
   imageUrl  String?
+  duration  Int      @default(30)
   createdAt DateTime @default(now())
 
   userId Int

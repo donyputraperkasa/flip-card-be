@@ -5,12 +5,14 @@ interface CreateQuestionDto {
     question: string;
     answer: string;
     imageUrl?: string | null;
+    duration?: number;
 }
 
 interface UpdateQuestionDto {
     question?: string;
     answer?: string;
     imageUrl?: string | null;
+    duration?: number;
 }
 
 @Injectable()
@@ -19,25 +21,49 @@ export class QuestionsService {
 
     async create(userId: number, data: CreateQuestionDto) {
         return this.prisma.question.create({
-        data: {
-            question: data.question,
-            answer: data.answer,
-            imageUrl: data.imageUrl ?? null,
-            user: { connect: { id: userId } }, // connect relation
-        },
+            data: {
+                question: data.question,
+                answer: data.answer,
+                imageUrl: data.imageUrl ?? null,
+                duration: data.duration ?? 30,
+                user: { connect: { id: userId } },
+            },
+            select: {
+                id: true,
+                question: true,
+                answer: true,
+                imageUrl: true,
+                duration: true,
+                createdAt: true,
+            }
         });
     }
 
     async findAll(userId: number) {
         return this.prisma.question.findMany({
-        where: { userId },
-        orderBy: { id: 'asc' },
+            where: { userId },
+            orderBy: { id: 'asc' },
+            select: {
+                id: true,
+                question: true,
+                answer: true,
+                imageUrl: true,
+                duration: true,    // ← PENTING!
+            }
         });
     }
 
     async findOne(userId: number, id: number) {
         return this.prisma.question.findFirst({
-        where: { id, userId }, // findFirst supports composite condition
+        where: { id, userId },
+        select: {
+            id: true,
+            question: true,
+            answer: true,
+            imageUrl: true,
+            duration: true,
+            createdAt: true,
+        }
         });
     }
 
@@ -49,6 +75,7 @@ export class QuestionsService {
             question: data.question ?? undefined,
             answer: data.answer ?? undefined,
             imageUrl: data.imageUrl ?? undefined,
+            duration: data.duration ?? undefined,
         },
         });
 
@@ -56,7 +83,16 @@ export class QuestionsService {
         throw new NotFoundException('Question not found or not owned by user');
         }
         // kalau mau return updated row, ambil lagi:
-        return this.prisma.question.findFirst({ where: { id, userId } });
+        return this.prisma.question.findFirst({ where: { id, userId },
+            select: {
+                id: true,
+                question: true,
+                answer: true,
+                imageUrl: true,
+                duration: true,
+                createdAt: true,
+            }
+        });
     }
 
     async delete(userId: number, id: number) {
