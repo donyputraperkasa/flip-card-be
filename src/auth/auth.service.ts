@@ -13,34 +13,32 @@ export class AuthService {
     // REGISTER
     async register(email: string, password: string) {
         const hashed = await bcrypt.hash(password, 10);
-
         const user = await this.prisma.user.create({
-        data: { email, password: hashed },
+            data: { 
+                email, 
+                password: hashed },
         });
-
         return { message: 'User registered', userId: user.id };
     }
 
     // LOGIN
     async login(email: string, password: string) {
         const user = await this.prisma.user.findUnique({
-        where: { email },
+            where: { email },
         });
-
         if (!user) throw new UnauthorizedException('Email tidak terdaftar');
-
         const match = await bcrypt.compare(password, user.password);
         if (!match) throw new UnauthorizedException('Password salah');
-
         const token = this.jwt.sign({
-        id: user.id,
-        email: user.email,
+            id: user.id,
+            email: user.email,
         });
-
         return {
-        message: 'Login berhasil',
-        token,
-        user: { id: user.id, email: user.email },
+            message: 'Login berhasil',
+            token,
+            user: { 
+                id: user.id, 
+                email: user.email },
         };
     }
 }
